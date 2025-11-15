@@ -9,9 +9,6 @@ ARG OPENSSH_RELEASE
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="aptalca"
 
-# Create abc user (matching linuxserver.io convention)
-RUN useradd -m -s /bin/bash abc
-
 RUN \
   echo "**** install runtime packages ****" && \
   apt-get update && \
