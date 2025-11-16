@@ -1,69 +1,102 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/astral-sh/uv:latest AS uv
+# ============================================================================
+# Build Arguments
+# ============================================================================
+ARG UBUNTU_CODENAME=noble
+ARG PYVERSION=3.13
+ARG DEADSNAKES_GPG_KEY=F23C5A6CF475977595C89F51BA6932366A755776
 
-FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
+# ============================================================================
+# Base Image
+# ============================================================================
+FROM ghcr.io/linuxserver/baseimage-ubuntu:${UBUNTU_CODENAME}
 
+# Re-declare ARGs needed after FROM
 ARG BUILD_DATE
 ARG VERSION
 ARG OPENSSH_RELEASE
-ARG PYVERSION=3.13
+ARG UBUNTU_CODENAME
+ARG PYVERSION
+ARG DEADSNAKES_GPG_KEY
 
-LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="aptalca"
+# ============================================================================
+# Metadata
+# ============================================================================
+LABEL original_repo="https://github.com/linuxserver/docker-openssh-server" \
+      current_repo="https://github.com/kapong/docker-openssh-server" \
+      maintainer="Phongphan Phienphanich"
 
-# Copy uv from official image
-COPY --from=uv /uv /usr/local/bin/uv
+# ============================================================================
+# Copy External Binaries
+# ============================================================================
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-RUN \
-  echo "**** install Python ${PYVERSION} ****" && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    gnupg && \
-  # Add deadsnakes PPA manually (without software-properties-common)
-  gpg --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && \
-  gpg --export F23C5A6CF475977595C89F51BA6932366A755776 | tee /etc/apt/trusted.gpg.d/deadsnakes.gpg > /dev/null && \
-  echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu noble main" > /etc/apt/sources.list.d/deadsnakes.list && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    python${PYVERSION} \
-    python${PYVERSION}-venv && \
-  # Set Python ${PYVERSION} as default python3
-  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYVERSION} 1 && \
-  update-alternatives --set python3 /usr/bin/python${PYVERSION} && \
-  echo "**** install runtime packages ****" && \
-  apt-get install -y --no-install-recommends \
-    logrotate \
-    nano \
-    netcat-openbsd \
-    sudo \
-    git && \
-  echo "**** install openssh-server ****" && \
-  apt-get install -y --no-install-recommends \
-    openssh-client \
-    openssh-server \
-    openssh-sftp-server && \
-  printf "Linuxserver.io version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
-  echo "**** setup openssh environment ****" && \
-  sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config && \
-  mkdir -p /run/sshd && \
-  apt-get clean && \
-  rm -rf \
-    /var/lib/apt/lists/* \
-    /tmp/* \
-    /var/tmp/*
+# ============================================================================
+# System Packages and Configuration
+# ============================================================================
+RUN echo "**** Installing system dependencies ****" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+    && echo "**** Adding deadsnakes PPA for Python ${PYVERSION} ****" \
+    && gpg --keyserver keyserver.ubuntu.com --recv-keys "${DEADSNAKES_GPG_KEY}" \
+    && gpg --export "${DEADSNAKES_GPG_KEY}" | tee /etc/apt/trusted.gpg.d/deadsnakes.gpg > /dev/null \
+    && echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu ${UBUNTU_CODENAME} main" > /etc/apt/sources.list.d/deadsnakes.list \
+    && echo "**** Installing Python ${PYVERSION} ****" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        "python${PYVERSION}" \
+        "python${PYVERSION}-venv" \
+    && echo "**** Setting Python ${PYVERSION} as default ****" \
+    && update-alternatives --install /usr/bin/python3 python3 "/usr/bin/python${PYVERSION}" 1 \
+    && update-alternatives --set python3 "/usr/bin/python${PYVERSION}" \
+    && echo "**** Installing runtime packages ****" \
+    && apt-get install -y --no-install-recommends \
+        git \
+        logrotate \
+        nano \
+        netcat-openbsd \
+        sudo \
+    && echo "**** Installing OpenSSH server ****" \
+    && apt-get install -y --no-install-recommends \
+        openssh-client \
+        openssh-server \
+        openssh-sftp-server \
+    && echo "**** Configuring OpenSSH ****" \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config \
+    && mkdir -p /run/sshd \
+    && echo "**** Creating build version file ****" \
+    && printf "Linuxserver.io version: %s\nBuild-date: %s\n" "${VERSION}" "${BUILD_DATE}" > /build_version \
+    && echo "**** Cleanup ****" \
+    && apt-get remove -y gnupg \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf \
+        /root/.gnupg \
+        /tmp/* \
+        /var/lib/apt/lists/* \
+        /var/tmp/*
 
-# add local files
+# ============================================================================
+# Add local configuration files
+# ============================================================================
 COPY /root /
 
+# ============================================================================
+# Configuration
+# ============================================================================
+# Expose SSH port
 EXPOSE 2222
 
-VOLUME /config
+# Configure volumes
+VOLUME ["/config"]
 
-RUN mkdir -p /workspace
+# Set up workspace directory
 WORKDIR /workspace
 
-ENV HOME=/workspace
-ENV BASH=/bin/bash
+# Environment variables
+ENV HOME=/workspace \
+    BASH=/bin/bash
