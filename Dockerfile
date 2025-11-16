@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/linuxserver/baseimage-debian:bullseye
+FROM ghcr.io/linuxserver/baseimage-debian:amd64-bullseye
 
 # set version label
 ARG BUILD_DATE
