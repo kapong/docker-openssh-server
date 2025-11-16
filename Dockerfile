@@ -114,4 +114,6 @@ RUN echo "**** Installing system dependencies ****" \
         /var/tmp/*
 
 # Environment variables
-ENV BASH=/bin/bash
+ENV BASH=/usr/bin/bash \
+    UV_CACHE_DIR=/cache/uv \
+    PYTHONUNBUFFERED=1
