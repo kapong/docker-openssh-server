@@ -1,14 +1,13 @@
 # syntax=docker/dockerfile:1
 
-# set version label
+FROM ghcr.io/astral-sh/uv:latest AS uv
+
+FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
+
 ARG BUILD_DATE
 ARG VERSION
 ARG OPENSSH_RELEASE
 ARG PYVERSION=3.13
-
-FROM ghcr.io/astral-sh/uv:python${PYVERSION}-trixie AS uv
-
-FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
 
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="aptalca"
