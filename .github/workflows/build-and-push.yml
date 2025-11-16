@@ -89,3 +89,19 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VERSION=${{ github.sha }}
             PYVERSION=${{ matrix.python_version }}
+
+  cleanup-untagged-images:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-base, build-and-push-python]
+    permissions:
+      packages: write
+    if: always()
+
+    steps:
+      - name: Delete untagged images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'docker-openssh-server'
+          package-type: 'container'
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: 'true'
