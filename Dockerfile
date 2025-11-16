@@ -16,25 +16,30 @@ LABEL maintainer="aptalca"
 COPY --from=uv /uv /usr/local/bin/uv
 
 RUN \
-  echo "**** install runtime packages ****" && \
+  echo "**** install Python ${PYVERSION} ****" && \
   apt-get update && \
+  apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    gnupg && \
+  # Add deadsnakes PPA manually (without software-properties-common)
+  gpg --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && \
+  gpg --export F23C5A6CF475977595C89F51BA6932366A755776 | tee /etc/apt/trusted.gpg.d/deadsnakes.gpg > /dev/null && \
+  echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu noble main" > /etc/apt/sources.list.d/deadsnakes.list && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+    python${PYVERSION} \
+    python${PYVERSION}-venv && \
+  # Set Python ${PYVERSION} as default python3
+  update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYVERSION} 1 && \
+  update-alternatives --set python3 /usr/bin/python${PYVERSION} && \
+  echo "**** install runtime packages ****" && \
   apt-get install -y --no-install-recommends \
     logrotate \
     nano \
     netcat-openbsd \
     sudo \
-    curl \
-    software-properties-common \
-    ca-certificates && \
-  echo "**** install Python ${PYVERSION} ****" && \
-  # Add deadsnakes PPA for newer Python versions
-  add-apt-repository ppa:deadsnakes/ppa && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    python${PYVERSION} \
-    python${PYVERSION}-venv || \
-  apt-get install -y --no-install-recommends \
-    python${PYVERSION}; \
+    git && \
   echo "**** install openssh-server ****" && \
   apt-get install -y --no-install-recommends \
     openssh-client \
@@ -56,3 +61,9 @@ COPY /root /
 EXPOSE 2222
 
 VOLUME /config
+
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+ENV HOME=/workspace
+ENV BASH=/bin/bash
