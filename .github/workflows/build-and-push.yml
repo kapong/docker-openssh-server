@@ -95,7 +95,7 @@ jobs:
     needs: [build-and-push-base, build-and-push-python]
     permissions:
       packages: write
-    if: always()
+    if: success()
 
     steps:
       - name: Delete untagged images
@@ -103,5 +103,5 @@ jobs:
         with:
           package-name: 'docker-openssh-server'
           package-type: 'container'
-          min-versions-to-keep: 2
+          min-versions-to-keep: 10
           delete-only-untagged-versions: 'true'
