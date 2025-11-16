@@ -48,6 +48,7 @@ jobs:
 
   build-and-push-python:
     runs-on: self-hosted
+    needs: build-and-push-base
     permissions:
       contents: read
       packages: write
