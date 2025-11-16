@@ -1,13 +1,19 @@
 # syntax=docker/dockerfile:1
 
+FROM ghcr.io/astral-sh/uv:latest AS uv
+
 FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
 
 # set version label
 ARG BUILD_DATE
 ARG VERSION
 ARG OPENSSH_RELEASE
+ARG PYVERSION=3.13
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="aptalca"
+
+# Copy uv from official image
+COPY --from=uv /uv /usr/local/bin/uv
 
 RUN \
   echo "**** install runtime packages ****" && \
@@ -19,6 +25,19 @@ RUN \
     sudo \
     curl \
     ca-certificates && \
+  echo "**** install Python ${PYVERSION} ****" && \
+  if apt-cache show python${PYVERSION} >/dev/null 2>&1; then \
+    apt-get install -y --no-install-recommends \
+      python${PYVERSION} \
+      python${PYVERSION}-venv || \
+    apt-get install -y --no-install-recommends \
+      python${PYVERSION}; \
+  else \
+    echo "Python ${PYVERSION} not available, trying python3"; \
+    apt-get install -y --no-install-recommends \
+      python3 \
+      python3-venv; \
+  fi && \
   echo "**** install openssh-server ****" && \
   apt-get install -y --no-install-recommends \
     openssh-client \
