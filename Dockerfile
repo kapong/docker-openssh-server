@@ -17,8 +17,6 @@ COPY --from=uv /uv /usr/local/bin/uv
 
 RUN \
   echo "**** install runtime packages ****" && \
-  # Add deadsnakes PPA for newer Python versions
-  add-apt-repository ppa:deadsnakes/ppa && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
     logrotate \
@@ -26,20 +24,17 @@ RUN \
     netcat-openbsd \
     sudo \
     curl \
+    software-properties-common \
     ca-certificates && \
   echo "**** install Python ${PYVERSION} ****" && \
-  if apt-cache show python${PYVERSION} >/dev/null 2>&1; then \
-    apt-get install -y --no-install-recommends \
-      python${PYVERSION} \
-      python${PYVERSION}-venv || \
-    apt-get install -y --no-install-recommends \
-      python${PYVERSION}; \
-  else \
-    echo "Python ${PYVERSION} not available, trying python3"; \
-    apt-get install -y --no-install-recommends \
-      python3 \
-      python3-venv; \
-  fi && \
+  # Add deadsnakes PPA for newer Python versions
+  add-apt-repository ppa:deadsnakes/ppa && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+    python${PYVERSION} \
+    python${PYVERSION}-venv || \
+  apt-get install -y --no-install-recommends \
+    python${PYVERSION}; \
   echo "**** install openssh-server ****" && \
   apt-get install -y --no-install-recommends \
     openssh-client \
