@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-and-push-base:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -47,7 +47,7 @@ jobs:
             VERSION=${{ github.sha }}
 
   build-and-push-python:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build-and-push-base
     permissions:
       contents: read
