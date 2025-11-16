@@ -42,6 +42,7 @@ fi
 if [[ ! -f /config/sshd/sshd_config ]]; then
     sed -i '/#PidFile/c\PidFile \/config\/sshd.pid' /etc/ssh/sshd_config
     sed -i 's/Include \/etc\/ssh\/sshd_config.d\/\*.conf/#Include \/etc\/ssh\/sshd_config.d\/\*.conf/' /etc/ssh/sshd_config
+    sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config
     cp -a /etc/ssh/sshd_config /config/sshd/sshd_config
 fi
 
@@ -148,6 +149,8 @@ chmod 700 \
     /config/.ssh
 chmod 600 \
     /config/.ssh/authorized_keys
+
+usermod -s /bin/bash "${USER_NAME}"
 
 lsiown -R root:"${USER_NAME}" \
     /config/sshd
